@@ -120,15 +120,37 @@ class Simulator:
         await self.device.end()
         pass
 
+    def validate_number(self, input):
+        while True:
+            try:
+                userInput = int(input)       
+            except ValueError:
+                print("Not an integer! Try again.")
+                continue
+            else:
+                if (userInput >=0 & userInput <=100):
+                    return userInput 
+                    break
+                else:
+                    print("Not a valid percentage between 0-100! Try again.")
+                    break
+                
     async def loop_interactive(self):
         while not self.is_ended:
             input1 = await aioconsole.ainput("""
 What should I do? (enter the number + enter)
-0: Exit
+-- Flows --
 1: Flow charge
 2: Flow heartbeat
 3: Flow authorize
-99: Single message
+-- Actions --
+4: Start charging
+5: Send MeterValues
+5: Stop charging
+6: Generate warning & error
+7: Emergency stop (only after action 4)
+99: Custom
+0: Exit
 """)
             if input1 == "0":
                 return
@@ -138,6 +160,19 @@ What should I do? (enter the number + enter)
                 await self.device.flow_heartbeat()
             elif input1 == "3":
                 await self.device.flow_authorize(**self.flow_charge_options)
+            elif input1 == "4":
+                await self.device.flow_start_charge(True, **self.flow_charge_options)
+            elif input1 == "5":
+                input1 = await aioconsole.ainput("Which Soc value?\n")
+                input1 = self.validate_number(input1)
+                await self.device.action_meter_value(input1, ** {'connectorId': 1})
+            elif input1 == "6":
+                await self.device.flow_stop_charge(True, **self.flow_charge_options)
+            elif input1 == "7":
+                await self.device.action_status_update("Faulted","OverVoltage", 0)
+                await self.device.action_status_update("Faulted","OverVoltage", 1)
+            elif input1 == "8":
+                await self.device.action_charge_stop("EmergencyStop")
             elif input1 == "99":
                 await self.device.loop_interactive_custom()
         pass
