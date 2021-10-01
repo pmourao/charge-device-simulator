@@ -265,6 +265,7 @@ class DeviceOcppJ(DeviceAbstract):
         resp_json = await self.by_device_req_send(action, json_payload)
         if resp_json is None or resp_json[2]['idTagInfo']['status'] != 'Accepted':
             await self.handle_error(f"Action {action} Response Failed", ErrorReasons.InvalidResponse)
+            self.logger.info(resp_json)
             return False
         self.logger.info(f"Action {action} End")
         return True
