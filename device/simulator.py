@@ -146,9 +146,9 @@ What should I do? (enter the number + enter)
 -- Actions --
 4: Start charging
 5: Send MeterValues
-5: Stop charging
-6: Generate warning & error
-7: Emergency stop (only after action 4)
+6: Stop charging
+7: Generate warning & error
+8: Emergency stop (only after action 4)
 99: Custom
 0: Exit
 """)
