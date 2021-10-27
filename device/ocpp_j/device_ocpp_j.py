@@ -7,7 +7,7 @@ import math
 import typing
 import uuid
 import ssl
-
+import re
 import aioconsole
 import websockets
 
@@ -41,6 +41,9 @@ class DeviceOcppJ(DeviceAbstract):
         self.spec_chargePointModel = None
         self.spec_chargePointVendor = None
         self.spec_chargePointSerialNumber = None
+        self.spec_allowOfflineTxForUnknownId = None
+        self.spec_authorizationCacheEnabled = None
+        self.spec_localAuthorizeOffline = None
 
     @property
     def logger(self) -> logging:
@@ -53,11 +56,18 @@ class DeviceOcppJ(DeviceAbstract):
             logging.getLogger('websockets.protocol').setLevel(logging.WARNING)
             server_url = f"{self.server_address}/{self.deviceId}"
             self.logger.info(f"Trying to connect.\nURL: {server_url}\nClient supported protocols: {json.dumps(self.protocols)}")
-            self._ws = await websockets.connect(
+            isSSL= re.search('^wss', server_url)
+            if isSSL:
+                self._ws = await websockets.connect(
                 server_url,
                 subprotocols=[websockets.Subprotocol(p) for p in self.protocols],
                 ssl=ssl_context
-            )
+                )
+            else:
+                self._ws = await websockets.connect(
+                server_url,
+                subprotocols=[websockets.Subprotocol(p) for p in self.protocols],
+                )
             self.logger.info(f"Connected with protocol: {self._ws.subprotocol}")
             self.__loop_internal_task = asyncio.create_task(self.__loop_internal())
             self.__ws_close_task = asyncio.create_task(self.__ws_close())
@@ -263,10 +273,10 @@ class DeviceOcppJ(DeviceAbstract):
             "reason": reason
         }
         resp_json = await self.by_device_req_send(action, json_payload)
-        if resp_json is None or resp_json[2]['idTagInfo']['status'] != 'Accepted':
-            await self.handle_error(f"Action {action} Response Failed", ErrorReasons.InvalidResponse)
-            self.logger.info(resp_json)
-            return False
+        #if resp_json is None or resp_json[2]['idTagInfo']['status'] != 'Accepted':
+        #    await self.handle_error(f"Action {action} Response Failed", ErrorReasons.InvalidResponse)
+        #    self.logger.info(resp_json)
+        #    return False
         self.logger.info(f"Action {action} End")
         return True
 
@@ -295,22 +305,22 @@ class DeviceOcppJ(DeviceAbstract):
         if not await self.action_charge_start(**options):
             self.charge_in_progress = False
             return False
-        if not await self.action_status_update("Preparing", "NoError", 1, **options):
+        if not await self.action_status_update("Preparing", "NoError", 1):
             self.charge_in_progress = False
             return False
-        if not await self.action_status_update("Charging", "NoError", 1, **options):
+        if not await self.action_status_update("Charging", "NoError", 1):
             self.charge_in_progress = False
             return False
         if not await self.flow_charge_ongoing_loop(auto_stop, **options):
             self.charge_in_progress = False
             return False
-        if not await self.action_status_update("Finishing", "NoError", 1, **options):
+        if not await self.action_status_update("Finishing", "NoError", 1):
             self.charge_in_progress = False
             return False
         if not await self.action_charge_stop("Local",**options):
             self.charge_in_progress = False
             return False
-        if not await self.action_status_update("Available", "NoError", 1, **options):
+        if not await self.action_status_update("Available", "NoError", 1):
             self.charge_in_progress = False
             return False
         self.logger.info(f"Flow {log_title} End")
@@ -429,6 +439,7 @@ class DeviceOcppJ(DeviceAbstract):
             "ReserveNow",
             "Reset",
             "DataTransfer",
+            "StatusNotification"
         ]):
             resp_payload = {
                 "status": "Accepted"
@@ -439,7 +450,10 @@ class DeviceOcppJ(DeviceAbstract):
                     {"key": "type", "value": "device-simulator", "readonly": "true"},
                     {"key": "server_address", "value": self.server_address, "readonly": "true"},
                     {"key": "identifier", "value": self.deviceId, "readonly": "false"},
-                    {"key":"NumberOfConnectors","readonly":"true","value":"1"}
+                    {"key":"NumberOfConnectors","readonly":"true","value":"1"},
+                    {"key":"AllowOfflineTxForUnknownId","readonly":"true","value": self.spec_allowOfflineTxForUnknownId},
+                    {"key":"AuthorizationCacheEnabled","readonly":"true","value": self.spec_authorizationCacheEnabled},
+                    {"key":"LocalAuthorizeOffline","readonly":"true","value": self.spec_localAuthorizeOffline},
                 ]
             }
         elif req_action == "GetDiagnostics".lower():
@@ -465,6 +479,9 @@ class DeviceOcppJ(DeviceAbstract):
                 asyncio.create_task(utility.run_with_delay(self.flow_charge_stop(), 2))
 
         if req_action == "Reset".lower():
+            asyncio.create_task(utility.run_with_delay(self.re_initialize(), 2))
+
+        if req_action == "StatusNotification".lower():
             asyncio.create_task(utility.run_with_delay(self.re_initialize(), 2))
 
         if resp_payload is not None:
