@@ -51,6 +51,12 @@ class ConfigParser:
                 dev1.spec_imsi = config['spec_imsi']
             if 'spec_meterType' in config:
                 dev1.spec_meterType = config['spec_meterType']
+            if 'spec_allowOfflineTxForUnknownId' in config:
+                dev1.spec_allowOfflineTxForUnknownId = config['spec_allowOfflineTxForUnknownId']
+            if 'spec_authorizationCacheEnabled' in config:
+                dev1.spec_authorizationCacheEnabled = config['spec_authorizationCacheEnabled']
+            if 'spec_localAuthorizeOffline' in config:
+                dev1.spec_localAuthorizeOffline = config['spec_localAuthorizeOffline']
             if 'spec_meterSerialNumber' in config:
                 dev1.spec_meterSerialNumber = config['spec_meterSerialNumber']
             result = dev1
@@ -78,6 +84,14 @@ class ConfigParser:
                 dev1.spec_imsi = config['spec_imsi']
             if 'spec_meterType' in config:
                 dev1.spec_meterType = config['spec_meterType']
+            if 'spec_meterSerialNumber' in config:
+                dev1.spec_meterSerialNumber = config['spec_meterSerialNumber']
+            if 'spec_allow_offline_tx_for_unknown_id' in config:
+                dev1.spec_meterType = config['spec_allow_offline_tx_for_unknown_id']
+            if 'spec_authorization_cache_enabled' in config:
+                dev1.spec_meterType = config['spec_authorization_cache_enabled']
+            if 'spec_local_authorize_offline' in config:
+                dev1.spec_meterType = config['spec_local_authorize_offline']
             if 'spec_meterSerialNumber' in config:
                 dev1.spec_meterSerialNumber = config['spec_meterSerialNumber']
             result = dev1

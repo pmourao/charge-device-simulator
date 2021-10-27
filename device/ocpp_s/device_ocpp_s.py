@@ -41,6 +41,9 @@ class DeviceOcppS(DeviceAbstract):
         self.spec_chargePointModel = None
         self.spec_chargePointVendor = None
         self.spec_chargePointSerialNumber = None
+        self.spec_allowOfflineTxForUnknownId: None
+        self.spec_authorizationCacheEnabled: None
+        self.spec_localAuthorizeOffline: None
 
     @property
     def logger(self) -> logging:
@@ -118,6 +121,12 @@ class DeviceOcppS(DeviceAbstract):
             req_payload['meterSerialNumber'] = self.spec_meterSerialNumber
         if self.spec_chargePointSerialNumber is not None:
             req_payload['chargePointSerialNumber'] = self.spec_chargePointSerialNumber
+        if self.spec_allow_offline_tx_for_unknown_id is not None:
+            json_payload['allowOfflineTxForUnknownId'] = self.spec_allowOfflineTxForUnknownId
+        if self.spec_authorization_cache_enabled is not None:
+            json_payload['authorizationCacheEnabled'] = self.spec_authorizationCacheEnabled
+        if self.spec_local_authorize_offline is not None:
+            json_payload['localAuthorizeOffline'] = self.spec_localAuthorizeOffline
         resp_payload = await self.by_device_req_send(action, req_payload)
         if resp_payload is None or resp_payload['status'] != 'Accepted':
             await self.handle_error(f"Action {action} Response Failed", ErrorReasons.InvalidResponse)
