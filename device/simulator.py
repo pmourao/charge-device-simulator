@@ -172,7 +172,7 @@ What should I do? (enter the number + enter)
                 await self.device.action_status_update("Faulted","OverVoltage", 0)
                 await self.device.action_status_update("Faulted","OverVoltage", 1)
             elif input1 == "8":
-                await self.device.action_charge_stop("EmergencyStop")
+                await self.device.action_charge_stop("EmergencyStop", **self.flow_charge_options)
             elif input1 == "99":
                 await self.device.loop_interactive_custom()
         pass
