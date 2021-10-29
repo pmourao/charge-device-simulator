@@ -79,8 +79,8 @@ class DeviceOcppJ(DeviceAbstract):
                 await self.action_register()
             await self.action_heart_beat()
             
-            #await self.action_status_update("Available", "NoError", 0)     # Status available for Charging Station
-            #await self.action_status_update("Available", "NoError", 1)     # Status available for Connector 1
+            await self.action_status_update("Available", "NoError", 0)     # Status available for Charging Station
+            await self.action_status_update("Available", "NoError", 1)     # Status available for Connector 1
             
             return True
         except ValueError as err:
@@ -441,10 +441,7 @@ class DeviceOcppJ(DeviceAbstract):
             "CancelReservation",
             "ReserveNow",
             "Reset",
-            "DataTransfer",
-            "StatusNotification",
-            "TriggerMessage"
-        ]):
+            "DataTransfer"        ]):
             resp_payload = {
                 "status": "Accepted"
             }
@@ -485,12 +482,6 @@ class DeviceOcppJ(DeviceAbstract):
         if req_action == "Reset".lower():
             asyncio.create_task(utility.run_with_delay(self.re_initialize(), 2))
 
-        if req_action == "TriggerMessage".lower():
-            if req_payload["requestedMessage"] == "StatusNotification":
-                await self.action_status_update("Available", "NoError", 0)     # Status available for Charging Station
-                await self.action_status_update("Available", "NoError", 1)     # Status available for Connector 1
-            else:
-                pass
 
         if resp_payload is not None:
             resp = f"""[{MessageTypes.Resp.value},"{req_id}",{json.dumps(resp_payload)}]"""
