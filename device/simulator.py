@@ -141,6 +141,7 @@ class Simulator:
 What should I do? (enter the number + enter)
 -- Flows --
 1: Flow charge
+11: Charge flow with errors and warnings
 2: Flow heartbeat
 3: Flow authorize
 -- Actions --
@@ -156,6 +157,8 @@ What should I do? (enter the number + enter)
                 return
             elif input1 == "1":
                 await self.device.flow_charge(True, **self.flow_charge_options)
+            elif input1 == "11":
+                await self.device.flow_charge_with_error_and_warning(True, **self.flow_charge_options)
             elif input1 == "2":
                 await self.device.flow_heartbeat()
             elif input1 == "3":

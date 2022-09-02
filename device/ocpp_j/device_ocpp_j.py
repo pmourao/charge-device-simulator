@@ -81,6 +81,8 @@ class DeviceOcppJ(DeviceAbstract):
             
             await self.action_status_update("Available", "NoError", 0)     # Status available for Charging Station
             await self.action_status_update("Available", "NoError", 1)     # Status available for Connector 1
+            await self.action_status_update("Available", "NoError", 2)     # Status available for Connector 2
+            await self.action_status_update("Available", "NoError", 3)     # Status available for Connector 3
             
             return True
         except ValueError as err:
@@ -329,6 +331,45 @@ class DeviceOcppJ(DeviceAbstract):
         self.logger.info(f"Flow {log_title} End")
         self.charge_in_progress = False
         return True
+    
+    async def flow_charge_with_error_and_warning(self, auto_stop: bool, **options) -> bool:
+        log_title = self.flow_charge.__name__
+        self.logger.info(f"Flow {log_title} Start")
+        if not await self.action_authorize(**options):
+            self.charge_in_progress = False
+            return False
+        if not await self.action_charge_start(**options):
+            self.charge_in_progress = False
+            return False
+        if not await self.action_status_update("Preparing", "NoError", 1):
+            self.charge_in_progress = False
+            return False
+        if not await self.action_status_update("Charging", "NoError", 1):
+            self.charge_in_progress = False
+            return False
+        if not await self.flow_charge_ongoing_loop(auto_stop, **options):
+            self.charge_in_progress = False
+            return False
+        
+        if not await self.device.action_status_update("Faulted","OverVoltage", 0):
+            self.charge_in_progress = False
+            return False
+        if not await self.device.action_status_update("Faulted","OverVoltage", 1):
+            self.charge_in_progress = False
+            return False
+
+        if not await self.action_status_update("Finishing", "NoError", 1):
+            self.charge_in_progress = False
+            return False
+        if not await self.action_charge_stop("Local",**options):
+            self.charge_in_progress = False
+            return False
+        if not await self.action_status_update("Available", "NoError", 1):
+            self.charge_in_progress = False
+            return False
+        self.logger.info(f"Flow {log_title} End")
+        self.charge_in_progress = False
+        return True
 
     async def flow_start_charge(self, auto_stop: bool, **options) -> bool:
         log_title = self.flow_charge.__name__
@@ -451,7 +492,7 @@ class DeviceOcppJ(DeviceAbstract):
                     {"key": "type", "value": "device-simulator", "readonly": "true"},
                     {"key": "server_address", "value": self.server_address, "readonly": "true"},
                     {"key": "identifier", "value": self.deviceId, "readonly": "false"},
-                    {"key":"NumberOfConnectors","readonly":"true","value":"1"},
+                    {"key":"NumberOfConnectors","readonly":"true","value":"2"},
                     {"key":"AllowOfflineTxForUnknownId","readonly":"true","value": self.spec_allowOfflineTxForUnknownId},
                     {"key":"AuthorizationCacheEnabled","readonly":"true","value": self.spec_authorizationCacheEnabled},
                     {"key":"LocalAuthorizeOffline","readonly":"true","value": self.spec_localAuthorizeOffline},
