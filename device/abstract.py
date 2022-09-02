@@ -108,7 +108,7 @@ class DeviceAbstract(abc.ABC):
             charge_loop_counter += 1
             if not await self.flow_charge_ongoing_actions(**options):
                 return False
-            if auto_stop and charge_loop_counter >= 5:
+            if auto_stop and charge_loop_counter >= 240:
                 break
         await asyncio.sleep(5)
         return True
